@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="咪咪Image - 配置 OpenAI 图片模型 API，根据中文提示词生成图片。"
+    />
+    <title>咪咪Image · AI 创意工作台</title>
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="图片生成设置">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <img src="assets/icon.svg" alt="" />
+          </div>
+          <div>
+            <h1>咪咪Image</h1>
+            <p>AI·创意工作台</p>
+          </div>
+          <span class="status-dot" title="本地应用已就绪"></span>
+          <button class="icon-button settings-open" type="button" title="API 设置" aria-label="API 设置">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.08A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.08A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64 1.7 1.7 0 0 0 10.03 3.08V3a2 2 0 0 1 4 0v.08A1.7 1.7 0 0 0 15 4.64a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9c.18.59.68 1 1.56 1.03H21a2 2 0 0 1 0 4h-.08A1.7 1.7 0 0 0 19.4 15Z" />
+            </svg>
+          </button>
+        </header>
+
+        <main class="controls">
+          <section class="control-section prompt-section">
+            <div class="section-title">
+              <span>描述 Prompt</span>
+              <strong id="tokenCount">0 字符，0 Token</strong>
+            </div>
+            <div class="prompt-box">
+              <div class="prompt-tools">
+                <button type="button" id="clearPrompt" title="清空">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14" /></svg>
+                  清空
+                </button>
+                <button type="button" id="samplePrompt" title="示例">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z" /></svg>
+                  示例
+                </button>
+                <button type="button" id="openHistory" title="历史">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v6h6M12 7v5l3 2" /></svg>
+                  历史
+                </button>
+                <label class="upload-trigger" title="参考图">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 14l2.5-3 2 2.5 1.5-2L18 16H6zM8.5 9h.01" /></svg>
+                  参考图
+                  <input id="referenceInput" type="file" accept="image/*" multiple />
+                </label>
+              </div>
+              <textarea
+                id="prompt"
+                maxlength="4000"
+                placeholder="描述你想要生成的图像内容，越详细越好……"
+              ></textarea>
+            </div>
+            <div id="referencePreview" class="reference-preview" aria-live="polite"></div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-title"><span>画面比例</span></div>
+            <div class="ratio-grid" id="ratioGrid"></div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-title"><span>清晰度</span></div>
+            <div class="segmented" id="qualityGroup" role="group" aria-label="清晰度">
+              <button type="button" data-quality="low">1K</button>
+              <button type="button" data-quality="medium" class="active">2K</button>
+              <button type="button" data-quality="high">4K 较慢</button>
+            </div>
+            <p class="muted">4K 图生成很慢，任务提交后请等待后台完成。</p>
+          </section>
+
+          <section class="control-section">
+            <div class="section-title"><span>输出格式</span></div>
+            <div class="segmented" id="formatGroup" role="group" aria-label="输出格式">
+              <button type="button" data-format="png">PNG</button>
+              <button type="button" data-format="jpeg" class="active">JPEG</button>
+              <button type="button" data-format="webp">WEBP</button>
+            </div>
+          </section>
+
+          <section class="control-section compression-section">
+            <label class="section-title" for="compression">
+              <span>JPG / WEBP 压缩质量</span>
+              <strong id="compressionValue">85</strong>
+            </label>
+            <input id="compression" type="range" min="40" max="100" value="85" />
+          </section>
+
+          <section class="control-section">
+            <div class="section-title"><span>生成数量</span></div>
+            <div class="stepper">
+              <button type="button" id="decreaseCount" aria-label="减少">−</button>
+              <output id="imageCount">1</output>
+              <button type="button" id="increaseCount" aria-label="增加">+</button>
+            </div>
+            <p class="muted">当前渠道单次最多可生成 <strong>3</strong> 张</p>
+          </section>
+
+          <section class="control-section submit-section">
+            <button class="generate-button" id="generateBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              开始生成
+            </button>
+            <div class="shortcut"><kbd>Ctrl</kbd><span>+</span><kbd>Enter</kbd></div>
+          </section>
+        </main>
+
+        <footer class="usage">
+          <p>累计 Token 消耗</p>
+          <div><span>输入</span> <strong id="inputTokens">0</strong> <span>输出</span> <strong id="outputTokens">0</strong> <span>合计</span> <strong id="totalTokens">0</strong></div>
+          <small>© 2026 咪咪Image · Powered by OpenAI API</small>
+        </footer>
+      </aside>
+
+      <section class="workspace" aria-label="生成结果">
+        <header class="topbar">
+          <div>
+            <p id="statusText">等待生成...</p>
+            <small id="modelText">模型：未配置</small>
+          </div>
+          <div class="top-actions">
+            <button class="ghost-button" id="downloadAll" type="button" disabled>全部下载</button>
+            <button class="ghost-button settings-open" type="button">设置</button>
+          </div>
+        </header>
+        <main class="canvas-stage" id="canvasStage">
+          <div class="empty-state" id="emptyState">
+            <div class="spark">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2 14.6 9.4 22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6L12 2Z" />
+              </svg>
+            </div>
+            <h2>输入提示词，开始创作</h2>
+            <p>在左侧填写描述，选择参数，点击「开始生成」即可生成 AI 图像</p>
+          </div>
+          <div class="image-grid" id="imageGrid" hidden></div>
+        </main>
+      </section>
+    </div>
+
+    <dialog id="settingsDialog" class="modal">
+      <form method="dialog" class="modal-panel" id="settingsForm">
+        <div class="modal-head">
+          <div>
+            <h2>API 设置</h2>
+            <p>密钥只保存在当前浏览器本地。</p>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <label>
+          <span>OpenAI API Key</span>
+          <input id="apiKey" type="password" autocomplete="off" placeholder="sk-..." />
+        </label>
+        <label>
+          <span>模型名</span>
+          <input id="modelName" type="text" placeholder="gpt-image-1.5 或 gpt-image-2" />
+        </label>
+        <label>
+          <span>API 地址</span>
+          <input id="apiBase" type="url" placeholder="https://api.openai.com/v1/images/generations" />
+        </label>
+        <p class="modal-note">
+          如果 GitHub Pages 浏览器直连遇到 CORS，可把 API 地址改成你自己的后端代理地址。
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-button danger" id="forgetSettings" type="button">清除配置</button>
+          <button class="generate-button" value="default" type="submit">保存设置</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="historyDialog" class="modal">
+      <form method="dialog" class="modal-panel history-panel">
+        <div class="modal-head">
+          <div>
+            <h2>历史记录</h2>
+            <p>最近 20 次生成会保存在本地。</p>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="关闭">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </form>
+    </dialog>
+
+    <template id="imageCardTemplate">
+      <article class="image-card">
+        <div class="image-wrap"></div>
+        <div class="image-meta">
+          <span></span>
+          <a class="download-link" download>下载</a>
+        </div>
+      </article>
+    </template>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>
